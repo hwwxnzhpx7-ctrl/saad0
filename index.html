@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تقسيط سعد | النظام الاحترافي</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root {
+            --bg-dark: #0f1217; --card-bg: #1c2128; --accent-orange: #ff6b35; 
+            --text-main: #ffffff; --text-dim: #e0e0e0; --success-green: #2ecc71; --error-red: #e74c3c;
+        }
+
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Segoe UI', Roboto, sans-serif; margin-bottom: 90px; }
+        .stat-card { background: var(--card-bg); border-radius: 20px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .mini-stat { background: rgba(255,255,255,0.03); border-radius: 15px; padding: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+
+        .form-control, .form-select { 
+            background: #24292f !important; border: 1px solid #3d444d !important; 
+            border-radius: 12px !important; color: #ffffff !important; padding: 12px !important;
+        }
+        .form-control::placeholder { color: #8b949e !important; }
+
+        .table { color: #ffffff !important; }
+        .table thead th { color: #ffffff !important; border-bottom: 2px solid #3d444d; font-weight: bold; }
+        .table tbody td { color: #ffffff !important; vertical-align: middle; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        .btn-action { background: var(--accent-orange); color: white; border: none; border-radius: 15px; padding: 15px; font-weight: bold; font-size: 1.1rem; }
+        
+        .btn-google { background: #ffffff; color: #000000; border-radius: 15px; padding: 15px; font-weight: bold; width: 100%; border: none; display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 1.1rem; transition: 0.3s; }
+        .btn-google:active { transform: scale(0.98); background: #f1f1f1; }
+        
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(28, 33, 40, 0.98); backdrop-filter: blur(15px); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; }
+        .nav-item { color: #8b949e; text-decoration: none; text-align: center; flex: 1; font-size: 0.75rem; cursor: pointer; position: relative; }
+        .nav-item.active { color: var(--accent-orange); font-weight: bold; }
+        .nav-item i { font-size: 1.4rem; display: block; margin-bottom: 2px; }
+
+        .notification-dot { position: absolute; top: 8px; right: 30%; width: 10px; height: 10px; background: var(--error-red); border-radius: 50%; display: none; border: 2px solid var(--card-bg); animation: pulse-red 2s infinite; }
+        @keyframes pulse-red { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(231, 76, 60, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); } }
+
+        .status-paid { color: var(--success-green); font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 2px 8px; border-radius: 5px; }
+        .status-unpaid { color: var(--error-red); font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 2px 8px; border-radius: 5px; }
+        .client-row { background: #24292f; border-radius: 15px; margin-bottom: 12px; padding: 18px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+        .section-title { color: var(--accent-orange) !important; border-right: 4px solid var(--accent-orange); padding-right: 12px; margin: 20px 0 15px; font-size: 1rem; font-weight: bold; }
+        .wallet-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 50px; background: rgba(255, 107, 53, 0.1); color: var(--accent-orange); margin-right: 5px; border: 1px solid rgba(255, 107, 53, 0.2); }
+        
+        .vault-card { background: #1c2128; border-radius: 20px; border: 1px solid #3d444d; overflow: hidden; margin-bottom: 20px; }
+        .vault-card-header { background: rgba(255, 107, 53, 0.1); padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .vault-card-body { padding: 20px; }
+        .vault-stat { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .vault-btn-group { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .btn-add-inv { background: var(--success-green); color: white; border: none; border-radius: 10px; padding: 8px; font-size: 0.8rem; flex: 1; }
+        .btn-withdraw-inv { background: var(--error-red); color: white; border: none; border-radius: 10px; padding: 8px; font-size: 0.8rem; flex: 1; }
+        .btn-log-inv { background: #3498db; color: white; border: none; border-radius: 10px; padding: 8px; font-size: 0.8rem; width: 100%; margin-top: 5px; }
+        
+        .log-item { font-size: 0.8rem; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; }
+        .total-box { background: rgba(255, 107, 53, 0.05); border: 1px dashed var(--accent-orange); padding: 10px; border-radius: 12px; margin-bottom: 15px; text-align: center; }
+        
+        .backup-item { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.05); }
+        
+        /* Draft Notification Style */
+        #draftAlert { display: none; background: #e67e22; color: white; text-align: center; padding: 6px; font-size: 0.85rem; position: sticky; top: 0; z-index: 3000; font-weight: bold; border-bottom: 2px solid rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<div id="draftAlert">⚠️ لديك تعديلات غير محفوظة في السحابة</div>
+
+<div id="loginPage" class="p-4 mt-5">
+    <div class="stat-card text-center shadow-lg py-5">
+        <div style="background: var(--accent-orange); width: 70px; height: 70px; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px;">
+            <i class="bi bi-google text-white fs-1"></i>
+        </div>
+        <h3 class="fw-bold mb-5">تقسيط سعد</h3>
+        <button onclick="loginWithGoogle()" class="btn btn-google shadow-sm">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="24">
+            الدخول عبر حساب Google
+        </button>
+    </div>
+</div>
+
+<div id="mainContent" style="display: none;">
+    <section id="homeSection" class="p-3">
+        <div class="stat-card text-center border-0" style="background: linear-gradient(145deg, #1c2128, #111418);">
+            <label class="text-center w-100">إجمالي مبيعات تقسيط سعد</label>
+            <h1 class="fw-bold my-2" id="totalInvestment" style="color: #ffffff;">0</h1>
+            <div class="badge bg-dark p-2 mt-2" style="color: var(--accent-orange);">عدد العملاء: <span id="clientsCount">0</span></div>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-6"><div class="mini-stat"><small class="text-dim d-block" style="font-size: 0.7rem;">المحصل</small><span id="statCollected" class="fw-bold" style="color: var(--success-green);">0</span></div></div>
+            <div class="col-6"><div class="mini-stat"><small class="text-dim d-block" style="font-size: 0.7rem;">الربح الحقيقي</small><span id="statRealProfit" class="fw-bold" style="color: #f1c40f;">0</span></div></div>
+            <div class="col-6"><div class="mini-stat"><small class="text-dim d-block" style="font-size: 0.7rem;">المتبقي</small><span id="statRemaining" class="fw-bold" style="color: var(--error-red);">0</span></div></div>
+            <div class="col-6"><div class="mini-stat"><small class="text-dim d-block" style="font-size: 0.7rem;">الربح الإجمالي</small><span id="statTotalProfit" class="fw-bold" style="color: #3498db;">0</span></div></div>
+        </div>
+
+        <div class="section-title">العملاء المتعثرون ⚠️</div>
+        <div id="lateClientsList"></div>
+        <div class="section-title">العملاء المستمرون</div>
+        <div id="clientsList"></div>
+    </section>
+
+    <section id="addClientSection" class="p-3" style="display:none;">
+        <h5 class="fw-bold mb-3">عقد جديد - تقسيط سعد</h5>
+        <div class="stat-card">
+            <form id="clientForm">
+                <div class="section-title">بيانات العميل</div>
+                <input type="text" id="cName" class="form-control mb-3" placeholder="اكتب اسم العميل الرباعي" required>
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><input type="text" id="cID" class="form-control" placeholder="اكتب رقم هوية العميل" required></div>
+                    <div class="col-6"><input type="text" id="cPhone" class="form-control" placeholder="اكتب رقم جوال العميل" required></div>
+                </div>
+                <div class="section-title">توزيع التمويل (من المحافظ)</div>
+                <div id="walletsDistributionArea" class="mb-3"></div>
+                <div class="section-title">بيانات الكفيل</div>
+                <input type="text" id="gName" class="form-control mb-3" placeholder="اكتب اسم الكفيل الرباعي">
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><input type="text" id="gID" class="form-control" placeholder="اكتب رقم هوية الكفيل"></div>
+                    <div class="col-6"><input type="text" id="gPhone" class="form-control" placeholder="اكتب رقم جوال الكفيل"></div>
+                </div>
+                <div class="section-title">الخطة المالية</div>
+                <label>سعر الشراء (التكلفة الإجمالية)</label>
+                <input type="number" id="costAmount" class="form-control mb-3" required readonly placeholder="سيتم حسابه تلقائياً">
+                <div class="row g-2 mb-3">
+                    <div class="col-6"><label>مبلغ البيع</label><input type="number" id="amount" class="form-control" required></div>
+                    <div class="col-6"><label>الأشهر</label><input type="number" id="instCount" class="form-control" required></div>
+                </div>
+                <label>تاريخ أول قسط</label>
+                <input type="date" id="startDate" class="form-control mb-4" required>
+                <button type="submit" class="btn btn-action w-100">إضافة العقد للمسودة</button>
+            </form>
+        </div>
+    </section>
+
+    <section id="vaultSection" class="p-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">خزنة الأموال | Cash Vault</h5>
+            <button onclick="addNewWallet()" class="btn btn-sm btn-success">+ إضافة محفظة جديدة</button>
+        </div>
+        <div class="total-box mb-2">
+            <small class="text-dim">إجمالي رأس المال الثابت (المحافظ)</small>
+            <h4 class="fw-bold mb-0" id="vaultTotalCapital" style="color: var(--accent-orange);">0 ر.س</h4>
+        </div>
+        <div class="total-box" style="border-style: solid; background: rgba(46, 204, 113, 0.05); border-color: var(--success-green);">
+            <small class="text-dim">الأموال الموجودة بالحساب البنكي (المتاحة)</small>
+            <h4 class="fw-bold mb-1" id="bankBalance" style="color: var(--success-green);">0 ر.س</h4>
+            <div id="partnersShare" style="font-size: 0.75rem; color: #8b949e;"></div>
+        </div>
+        <div id="walletsVaultList"></div>
+    </section>
+
+    <div id="logSection" class="p-3" style="display:none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-dark); z-index: 2000; overflow-y: auto;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0">سجل عمليات المحفظة</h5>
+            <button class="btn btn-outline-light btn-sm" onclick="closeLog()">إغلاق</button>
+        </div>
+        <div id="logContent"></div>
+    </div>
+
+    <section id="archiveSection" class="p-3" style="display:none;">
+        <h5 class="fw-bold mb-3">الأرشيف (العقود المكتملة)</h5>
+        <div id="archiveList"></div>
+    </section>
+
+    <section id="editClientSection" class="p-3" style="display:none;">
+        <h5 class="fw-bold mb-3">تعديل بيانات العميل</h5>
+        <div class="stat-card">
+            <input type="hidden" id="editClientId">
+            <div class="section-title">تحديث المعلومات</div>
+            <label>اسم العميل</label>
+            <input type="text" id="editName" class="form-control mb-3">
+            <label>رقم الهوية</label>
+            <input type="text" id="editID" class="form-control mb-3">
+            <label>رقم جوال</label>
+            <input type="text" id="editPhone" class="form-control mb-4">
+            <button onclick="saveClientEdit()" class="btn btn-action w-100">تحديث في المسودة</button>
+            <button onclick="showSection('home')" class="btn btn-outline-light w-100 mt-2">إلغاء</button>
+        </div>
+    </section>
+
+    <section id="detailsSection" class="p-3" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <button class="btn btn-dark rounded-circle" onclick="showSection('home')"><i class="bi bi-chevron-right text-white"></i></button>
+            <h6 class="fw-bold mb-0">كشف الحساب</h6>
+            <div>
+                <button class="btn btn-sm btn-outline-warning fw-bold px-2 me-1" onclick="settleContract()">تسوية العقد</button>
+                <button class="btn btn-sm btn-light fw-bold px-3 shadow-sm" onclick="downloadPDF()">PDF</button>
+            </div>
+        </div>
+        <div id="pdfArea"><div id="clientDetailsContent"></div></div>
+    </section>
+
+    <section id="settingsSection" class="p-3" style="display:none;">
+        <div class="stat-card text-center">
+            <h6>إدارة السحابة الذكية</h6>
+            <p class="text-dim small mt-2" id="userDisplayEmail">تحقق من الحساب...</p>
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            
+            <div class="alert alert-info py-2" style="font-size: 0.8rem; background: rgba(52, 152, 219, 0.1); border-color: #3498db; color: #3498db;">
+                <i class="bi bi-cloud-check-fill me-1"></i>
+                يتم الحفظ التلقائي شهرياً، ويمكنك المزامنة يدوياً الآن.
+            </div>
+
+            <div id="cloudBackupsList" class="text-start mb-3">
+                <small class="text-dim d-block mb-2">النسخ الشهرية المؤتمتة:</small>
+            </div>
+
+            <button onclick="saveEverythingToCloud()" class="btn btn-success w-100 mb-3 py-3 fw-bold shadow-sm">
+                <i class="bi bi-cloud-arrow-up-fill me-2"></i>حفظ ومزامنة السحابة ✅
+            </button>
+
+            <button onclick="logoutWithConfirm()" class="btn btn-outline-danger w-100 border-0">
+                <i class="bi bi-power me-2"></i>تسجيل خروج
+            </button>
+        </div>
+    </section>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" id="nav-home" onclick="showSection('home')">
+            <div class="notification-dot" id="lateDot"></div>
+            <i class="bi bi-house-door-fill"></i>الرئيسية
+        </div>
+        <div class="nav-item" id="nav-vault" onclick="showSection('vault')"><i class="bi bi-bank"></i>الخزنة</div>
+        <div class="nav-item" id="nav-add" onclick="showSection('addClient')"><i class="bi bi-plus-square-fill"></i>إضافة</div>
+        <div class="nav-item" id="nav-archive" onclick="showSection('archive')"><i class="bi bi-archive-fill"></i>الأرشيف</div>
+        <div class="nav-item" id="nav-settings" onclick="showSection('settings')"><i class="bi bi-cloud-check-fill"></i>السحابة</div>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, getDocs, setDoc, serverTimestamp, query, orderBy, limit, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCsF-OsbE075c0lwhhcOj6GIHdUZAfCHCU",
+        authDomain: "myinstallmentsystem.firebaseapp.com",
+        projectId: "myinstallmentsystem",
+        storageBucket: "myinstallmentsystem.firebasestorage.app",
+        messagingSenderId: "1073933519716",
+        appId: "1:1073933519716:web:caac200c07e0356f81c871"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    const ALLOWED_EMAIL = "cssp2015@gmail.com";
+
+    let clients = [];
+    let wallets = [];
+    let currentViewingClientId = null;
+    let isDirty = false; // لمراقبة وجود تغييرات في المسودة
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user && user.email === ALLOWED_EMAIL) {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('userDisplayEmail').innerText = "مرحباً بك: " + user.email;
+            
+            // تحميل البيانات لمرة واحدة عند الدخول
+            const wSnap = await getDocs(collection(db, "wallets"));
+            wallets = wSnap.docs.map(d => ({id: d.id, ...d.data()}));
+            
+            const cSnap = await getDocs(collection(db, "clients"));
+            clients = cSnap.docs.map(d => ({id: d.id, ...d.data()}));
+
+            renderAll();
+            
+            // مراقبة النسخ السحابية
+            onSnapshot(collection(db, "backups"), (snap) => {
+                const backups = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderBackupsList(backups);
+                checkMonthlyBackup(backups);
+            });
+        } else if (user) {
+            alert("عذراً، هذا النظام خاص بالمصرح لهم فقط.");
+            signOut(auth);
+        }
+    });
+
+    // --- وظيفة تفعيل وضع المسودة (التنبيه) ---
+    function markAsDirty() {
+        isDirty = true;
+        document.getElementById('draftAlert').style.display = 'block';
+    }
+
+    // --- وظيفة الحفظ السحابي النهائي (المزامنة) ---
+    window.saveEverythingToCloud = async () => {
+        if (!confirm("تأكيد رفع كافة التعديلات الحالية إلى السحابة؟")) return;
+        try {
+            const batch = writeBatch(db);
+            
+            // مسح البيانات القديمة لضمان المطابقة التامة للمسودة
+            const wSnap = await getDocs(collection(db, "wallets"));
+            wSnap.forEach(d => batch.delete(d.ref));
+            const cSnap = await getDocs(collection(db, "clients"));
+            cSnap.forEach(d => batch.delete(d.ref));
+
+            // رفع النسخة الحالية من المسودة
+            wallets.forEach(w => {
+                const {id, ...wData} = w;
+                batch.set(doc(collection(db, "wallets")), wData);
+            });
+            clients.forEach(c => {
+                const {id, ...cData} = c;
+                batch.set(doc(collection(db, "clients")), cData);
+            });
+
+            await batch.commit();
+            isDirty = false;
+            document.getElementById('draftAlert').style.display = 'none';
+            alert("تم الحفظ السحابي بنجاح ✅");
+            // إعادة التحميل لضمان استقرار المعرفات (IDs)
+            location.reload();
+        } catch (e) {
+            alert("فشل الحفظ: " + e.message);
+        }
+    };
+
+    function renderAll() {
+        renderWalletsInAddClient();
+        renderVault();
+        renderHome();
+        checkLateNotifications();
+    }
+
+    async function checkMonthlyBackup(existingBackups) {
+        const today = new Date();
+        if (today.getDate() === 15) {
+            const currentMonthYear = `${today.getMonth() + 1}-${today.getFullYear()}`;
+            const alreadyDone = existingBackups.some(b => b.monthID === currentMonthYear);
+            if (!alreadyDone) {
+                if (existingBackups.length >= 5) {
+                    const sorted = existingBackups.sort((a,b) => (a.serverTime?.seconds || 0) - (b.serverTime?.seconds || 0));
+                    await deleteDoc(doc(db, "backups", sorted[0].id));
+                }
+                await addDoc(collection(db, "backups"), {
+                    timestamp: new Date().toLocaleString('ar-SA'),
+                    serverTime: serverTimestamp(),
+                    monthID: currentMonthYear,
+                    data: JSON.stringify({ clients, wallets })
+                });
+            }
+        }
+    }
+
+    window.logoutWithConfirm = () => { 
+        if(isDirty) {
+            if(!confirm("لديك تعديلات غير محفوظة! هل تريد الخروج وفقدان المسودة؟")) return;
+        } else {
+            if(!confirm("هل تريد تسجيل الخروج؟")) return;
+        }
+        signOut(auth).then(() => location.reload());
+    };
+
+    function renderBackupsList(backups) {
+        const container = document.getElementById('cloudBackupsList');
+        if(!container) return;
+        let html = backups.length ? '<small class="text-dim d-block mb-2">النسخ الشهرية المؤتمتة:</small>' : '<small class="text-warning">بانتظار تاريخ 15...</small>';
+        backups.sort((a,b) => (b.serverTime?.seconds || 0) - (a.serverTime?.seconds || 0)).forEach(b => {
+            html += `<div class="backup-item"><div><small class="d-block fw-bold text-white">${b.timestamp}</small></div><button onclick="restoreFromCloud('${b.id}')" class="btn btn-sm btn-outline-info py-1" style="font-size: 0.7rem;">استعادة</button></div>`;
+        });
+        container.innerHTML = html;
+    }
+
+    window.restoreFromCloud = async (backupId) => {
+        if (!confirm("الاستعادة ستمسح المسودة الحالية. هل أنت متأكد؟")) return;
+        try {
+            const backupsSnap = await getDocs(collection(db, "backups"));
+            const backupDoc = backupsSnap.docs.find(d => d.id === backupId);
+            const payload = JSON.parse(backupDoc.data().data);
+            
+            // تنفيذ الاستعادة عبر السحابة فوراً
+            const batch = writeBatch(db);
+            const wSnap = await getDocs(collection(db, "wallets")); wSnap.forEach(d => batch.delete(d.ref));
+            const cSnap = await getDocs(collection(db, "clients")); cSnap.forEach(d => batch.delete(d.ref));
+            
+            payload.wallets.forEach(w => { const {id, ...d} = w; batch.set(doc(collection(db, "wallets")), d); });
+            payload.clients.forEach(c => { const {id, ...d} = c; batch.set(doc(collection(db, "clients")), d); });
+            
+            await batch.commit();
+            alert("تمت استعادة النسخة بنجاح ✅");
+            location.reload(); 
+        } catch (e) { alert("خطأ: " + e.message); }
+    };
+
+    window.loginWithGoogle = () => signInWithPopup(auth, provider).catch(e => alert("خطأ: " + e.message));
+
+    function checkLateNotifications() {
+        const today = new Date().toISOString().split('T')[0];
+        const hasLate = clients.some(c => c.installments.some(i => i.status === 'غير مدفوع' && i.dueDate < today));
+        document.getElementById('lateDot').style.display = hasLate ? 'block' : 'none';
+    }
+
+    window.addNewWallet = () => {
+        const name = prompt("ادخل اسم المحفظة:");
+        if(!name) return;
+        const cap = parseFloat(prompt("ادخل مبلغ الاستثمار (رأس المال الثابت):", "0") || 0);
+        wallets.push({ id: Date.now().toString(), name: name, capital: cap, withdrawn: 0, logs: [] });
+        markAsDirty(); renderAll();
+    };
+
+    window.increaseInvestment = (id) => {
+        const idx = wallets.findIndex(w => w.id === id);
+        const amount = parseFloat(prompt(`رأس المال الثابت الحالي ${wallets[idx].capital}. كم تريد الإضافة؟`, "0") || 0);
+        if(amount > 0) {
+            wallets[idx].capital += amount;
+            wallets[idx].logs.push({ type: 'زيادة رأس مال', amount: amount, date: new Date().toLocaleString() });
+            markAsDirty(); renderAll();
+        }
+    };
+
+    window.withdrawInvestment = (id, availableAmount) => {
+        const idx = wallets.findIndex(w => w.id === id);
+        const amount = parseFloat(prompt(`المتاح للسحب حالياً: ${availableAmount} ر.س. \n أدخل المبلغ المراد سحبه:`, "0") || 0);
+        if (amount > 0) {
+            if (amount > availableAmount) return alert("المبلغ أكبر من المتاح!");
+            wallets[idx].withdrawn += amount;
+            wallets[idx].logs.push({ type: 'سحب مبالغ', amount: amount, date: new Date().toLocaleString() });
+            markAsDirty(); renderAll();
+        }
+    };
+
+    window.showLog = (id) => {
+        const wallet = wallets.find(w => w.id === id);
+        let html = `<div class="stat-card"><h6>${wallet.name} - سجل العمليات</h6>`;
+        if(!wallet.logs || wallet.logs.length === 0) html += `<p class="text-dim small">لا يوجد سجل</p>`;
+        else {
+            [...wallet.logs].reverse().forEach(log => {
+                html += `<div class="log-item"><span>${log.type}</span><span class="${log.type.includes('سحب') ? 'text-danger' : 'text-success'}">${log.amount.toLocaleString()} ر.س</span><small class="text-dim">${log.date}</small></div>`;
+            });
+        }
+        document.getElementById('logContent').innerHTML = html + `</div>`;
+        document.getElementById('logSection').style.display = 'block';
+    };
+
+    window.closeLog = () => document.getElementById('logSection').style.display = 'none';
+    window.deleteWallet = (id) => { if(confirm("حذف المحفظة من المسودة؟")) { wallets = wallets.filter(w => w.id !== id); markAsDirty(); renderAll(); } };
+
+    function renderWalletsInAddClient() {
+        const container = document.getElementById('walletsDistributionArea');
+        container.innerHTML = wallets.length ? '' : '<p class="text-danger small">لا توجد محافظ!</p>';
+        wallets.forEach(w => {
+            container.innerHTML += `<div class="row g-2 mb-2 align-items-center"><div class="col-6"><label class="small text-dim">من ${w.name}</label></div><div class="col-6"><input type="number" class="form-control wallet-input" data-id="${w.id}" value="0" oninput="calculateTotalCost()"></div></div>`;
+        });
+    }
+
+    window.calculateTotalCost = () => {
+        let total = 0;
+        document.querySelectorAll('.wallet-input').forEach(input => total += parseFloat(input.value || 0));
+        document.getElementById('costAmount').value = total.toFixed(2);
+    };
+
+    function getWalletFullStats(walletId) {
+        const w = wallets.find(x => x.id === walletId);
+        if (!w) return { available: 0, profits: 0, currentInvested: 0, totalExists: 0 };
+        let profits = 0; let currentInvested = 0; 
+        clients.forEach(c => {
+            const walletShare = parseFloat(c.walletDistribution?.[w.id] || 0);
+            if(walletShare > 0) {
+                const ratio = walletShare / (parseFloat(c.cost) || 1);
+                currentInvested += walletShare; 
+                c.installments.forEach(inst => {
+                    if(inst.status === 'مدفوع') {
+                        const originalPart = (parseFloat(c.cost) / c.installments.length) * ratio;
+                        profits += (parseFloat(inst.amount) * ratio) - originalPart;
+                        currentInvested -= originalPart; 
+                    }
+                });
+            }
+        });
+        const available = (parseFloat(w.capital) - currentInvested + profits) - parseFloat(w.withdrawn || 0);
+        const totalExists = available + currentInvested;
+        return { available, profits, currentInvested, totalExists };
+    }
+
+    function renderVault() {
+        const container = document.getElementById('walletsVaultList');
+        if(!container) return; container.innerHTML = '';
+        let grandTotalCapital = 0, totalBankAvailable = 0, partnersHtml = "";
+        wallets.forEach(w => {
+            grandTotalCapital += parseFloat(w.capital || 0);
+            const stats = getWalletFullStats(w.id);
+            totalBankAvailable += stats.available;
+            partnersHtml += `${w.name} له ${Math.round(stats.available).toLocaleString()} ر.س ${wallets.indexOf(w) < wallets.length -1 ? ' | ' : ''}`;
+            container.innerHTML += `<div class="vault-card"><div class="vault-card-header"><span class="fw-bold text-white">${w.name}</span><button onclick="deleteWallet('${w.id}')" class="btn btn-sm text-danger opacity-50 p-0"><i class="bi bi-trash3-fill"></i></button></div><div class="vault-card-body"><div class="vault-stat"><small class="text-white fw-bold">إجمالي الموجود</small><span class="fw-bold text-info">${Math.round(stats.totalExists).toLocaleString()} ر.س</span></div><hr style="border-color: rgba(255,255,255,0.1); margin: 8px 0;"><div class="vault-stat"><small class="text-dim">رأس المال الثابت</small><span>${w.capital.toLocaleString()} ر.س</span></div><div class="vault-stat"><small class="text-dim">متاح للسحب</small><span class="text-success fw-bold">${Math.round(stats.available).toLocaleString()} ر.س</span></div><div class="vault-stat"><small class="text-dim">أموال مستثمرة</small><span class="text-white fw-bold">${Math.round(stats.currentInvested).toLocaleString()} ر.س</span></div><div class="vault-stat"><small class="text-dim">الأرباح المحققة</small><span class="text-warning">${Math.round(stats.profits).toLocaleString()} ر.س</span></div><div class="vault-btn-group"><button onclick="increaseInvestment('${w.id}')" class="btn-add-inv">زيادة</button><button onclick="withdrawInvestment('${w.id}', ${Math.round(stats.available)})" class="btn-withdraw-inv">سحب</button><button onclick="showLog('${w.id}')" class="btn-log-inv">سجل العمليات</button></div></div></div>`;
+        });
+        document.getElementById('vaultTotalCapital').innerText = grandTotalCapital.toLocaleString() + ' ر.س';
+        document.getElementById('bankBalance').innerText = Math.round(totalBankAvailable).toLocaleString() + ' ر.س';
+        document.getElementById('partnersShare').innerHTML = partnersHtml;
+    }
+
+    window.settleContract = () => {
+        if(!currentViewingClientId) return;
+        const idx = clients.findIndex(x => x.id === currentViewingClientId);
+        const c = clients[idx];
+        const unpaid = c.installments.filter(i => i.status === 'غير مدفوع');
+        const totalRemaining = unpaid.reduce((sum, i) => sum + parseFloat(i.amount), 0);
+        const discount = parseFloat(prompt(`المتبقي: ${totalRemaining} ر.س. الخصم:`, "0") || 0);
+        const finalAmount = totalRemaining - discount;
+        if(confirm(`سداد ${finalAmount} ر.س وإغلاق العقد في المسودة؟`)) {
+            clients[idx].installments = c.installments.map(i => ({ ...i, status: 'مدفوع' }));
+            if(discount > 0) clients[idx].installments[c.installments.length-1].amount = (parseFloat(c.installments[c.installments.length-1].amount) - discount).toFixed(2);
+            markAsDirty(); alert("تمت التسوية في المسودة ✅"); viewClient(currentViewingClientId); renderAll();
+        }
+    };
+
+    document.getElementById('clientForm').onsubmit = function(e) {
+        e.preventDefault();
+        const dist = {}; let totalDistributed = 0, errorMsg = "";
+        document.querySelectorAll('.wallet-input').forEach(input => {
+            const val = parseFloat(input.value || 0);
+            if (val > 0) {
+                const wId = input.getAttribute('data-id');
+                const stats = getWalletFullStats(wId);
+                if (val > stats.available) errorMsg += `رصيد (${wallets.find(w=>w.id===wId).name}) غير كافٍ!\n`;
+                dist[wId] = val; totalDistributed += val;
+            }
+        });
+        if (errorMsg !== "") return alert(errorMsg);
+        const amount = parseFloat(document.getElementById('amount').value);
+        const count = parseInt(document.getElementById('instCount').value);
+        const date = new Date(document.getElementById('startDate').value);
+        if(totalDistributed <= 0) return alert("يرجى توزيع المبالغ");
+        let installments = [];
+        for(let i=0; i<count; i++) {
+            let d = new Date(date); d.setMonth(d.getMonth() + i);
+            installments.push({ dueDate: d.toISOString().split('T')[0], amount: (amount / count).toFixed(2), status: 'غير مدفوع' });
+        }
+        clients.push({
+            id: Date.now().toString(),
+            name: document.getElementById('cName').value, idNum: document.getElementById('cID').value, phone: document.getElementById('cPhone').value,
+            gName: document.getElementById('gName').value, gID: document.getElementById('gID').value, gPhone: document.getElementById('gPhone').value,
+            walletDistribution: dist, cost: totalDistributed, total: amount, installments: installments
+        });
+        markAsDirty(); alert('تمت الإضافة للمسودة ✅'); this.reset(); showSection('home'); renderAll();
+    };
+
+    function renderHome() {
+        const list = document.getElementById('clientsList'), lateList = document.getElementById('lateClientsList'), archiveList = document.getElementById('archiveList');
+        if(!list) return; list.innerHTML = ''; lateList.innerHTML = ''; archiveList.innerHTML = '';
+        let totalSales = 0, collected = 0, totalCost = 0; const today = new Date().toISOString().split('T')[0];
+        clients.forEach(c => {
+            let clientPaid = 0, hasLate = false, isFinished = true;
+            c.installments.forEach(inst => {
+                if(inst.status === 'مدفوع') { collected += parseFloat(inst.amount); clientPaid += parseFloat(inst.amount); }
+                else { isFinished = false; if (inst.dueDate < today) hasLate = true; }
+            });
+            totalSales += parseFloat(c.total || 0); totalCost += parseFloat(c.cost || 0);
+            let walletTags = "";
+            for(let wid in c.walletDistribution) {
+                const w = wallets.find(x => x.id === wid);
+                if(w && c.walletDistribution[wid] > 0) walletTags += `<span class="wallet-tag">${w.name}</span>`;
+            }
+            const row = `<div class="client-row" style="${isFinished ? 'border-right: 5px solid var(--success-green);' : (hasLate ? 'border-right: 5px solid var(--error-red);' : '')}"><div><h6 class="mb-0 fw-bold text-white">${c.name} ${walletTags}</h6><small class="text-dim">الباقي: ${(parseFloat(c.total) - clientPaid).toLocaleString()} ر.س</small></div><div class="d-flex gap-2"><button class="btn btn-sm text-warning fs-5" onclick="editClient('${c.id}')"><i class="bi bi-pencil-square"></i></button><button class="btn btn-sm text-info fs-5" onclick="viewClient('${c.id}')"><i class="bi bi-eye-fill"></i></button><button class="btn btn-sm text-danger fs-5" onclick="deleteClient('${c.id}')"><i class="bi bi-trash3-fill"></i></button></div></div>`;
+            if(isFinished) archiveList.innerHTML += row; else if(hasLate) lateList.innerHTML += row; else list.innerHTML += row;
+        });
+        document.getElementById('totalInvestment').innerText = Math.round(totalSales).toLocaleString() + ' ر.س';
+        document.getElementById('statCollected').innerText = Math.round(collected).toLocaleString();
+        document.getElementById('statRemaining').innerText = Math.round(totalSales - collected).toLocaleString();
+        document.getElementById('statTotalProfit').innerText = Math.round(totalSales - totalCost).toLocaleString();
+        document.getElementById('statRealProfit').innerText = Math.round(collected > totalCost ? (collected - totalCost) : 0).toLocaleString();
+        document.getElementById('clientsCount').innerText = clients.filter(x => x.installments.some(i => i.status === 'غير مدفوع')).length;
+    }
+
+    window.editClient = (id) => {
+        const c = clients.find(x => x.id === id);
+        document.getElementById('editClientId').value = id; document.getElementById('editName').value = c.name;
+        document.getElementById('editID').value = c.idNum; document.getElementById('editPhone').value = c.phone;
+        showSection('editClient');
+    };
+
+    window.saveClientEdit = () => {
+        const id = document.getElementById('editClientId').value;
+        const idx = clients.findIndex(x => x.id === id);
+        clients[idx].name = document.getElementById('editName').value;
+        clients[idx].idNum = document.getElementById('editID').value;
+        clients[idx].phone = document.getElementById('editPhone').value;
+        markAsDirty(); alert('تم التحديث في المسودة ✅'); showSection('home'); renderAll();
+    };
+
+    window.viewClient = (id) => {
+        currentViewingClientId = id; const c = clients.find(x => x.id === id);
+        let html = `<div class="stat-card border-0"><h5 class="fw-bold text-white">${c.name}</h5><div class="small text-dim mb-3">الهوية: ${c.idNum} | الجوال: ${c.phone}</div><table class="table table-dark table-borderless small"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الحالة</th><th>تذكير</th></tr></thead><tbody>`;
+        c.installments.forEach((inst, idx) => {
+            html += `<tr><td>${inst.dueDate}</td><td>${inst.amount}</td><td onclick="togglePayment('${id}', ${idx})" style="cursor:pointer"><span class="${inst.status === 'مدفوع' ? 'status-paid' : 'status-unpaid'}">${inst.status}</span></td><td>${inst.status === 'غير مدفوع' ? `<i class="bi bi-whatsapp text-success fs-5" onclick="sendWhatsAppReminder('${id}', ${idx})"></i>` : '✅'}</td></tr>`;
+        });
+        document.getElementById('clientDetailsContent').innerHTML = html + `</tbody></table></div>`;
+        showSection('details');
+    };
+
+    window.sendWhatsAppReminder = (id, idx) => {
+        const c = clients.find(x => x.id === id);
+        const inst = c.installments[idx];
+        let phone = c.phone.startsWith('05') ? '966' + c.phone.substring(1) : c.phone;
+        const msg = `تذكير بالقسط المستحق بمبلغ ${inst.amount} ر.س. وجزاكم الله خير.`;
+        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+
+    window.togglePayment = (id, idx) => {
+        const cIdx = clients.findIndex(x => x.id === id);
+        clients[cIdx].installments[idx].status = clients[cIdx].installments[idx].status === 'مدفوع' ? 'غير مدفوع' : 'مدفوع';
+        markAsDirty(); viewClient(id); renderAll();
+    };
+
+    window.deleteClient = (id) => { if(confirm("حذف العميل من المسودة؟")) { clients = clients.filter(c => c.id !== id); markAsDirty(); renderAll(); } };
+    window.downloadPDF = () => html2pdf().from(document.getElementById('pdfArea')).save('Statement.pdf');
+
+    window.showSection = (id) => {
+        ['homeSection', 'addClientSection', 'detailsSection', 'settingsSection', 'editClientSection', 'archiveSection', 'vaultSection'].forEach(s => {
+            const el = document.getElementById(s); if(el) el.style.display = 'none';
+        });
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.getElementById(id + 'Section').style.display = 'block';
+        if(document.getElementById('nav-' + id)) document.getElementById('nav-' + id).classList.add('active');
+    };
+</script>
+</body>
+</html>
