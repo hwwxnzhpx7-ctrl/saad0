@@ -252,6 +252,13 @@
             margin-bottom: 15px; 
             text-align: center; 
         }
+
+        .log-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+        }
+        .log-item:last-child { border: none; }
         
         /* Draft Alert */
         #draftAlert { 
@@ -268,8 +275,7 @@
         }
 
         /* PDF Style - Simplified for print */
-        #pdfArea { display: none; background: white; color: black; padding: 40px; }
-        .pdf-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 20px; }
+        #pdfAreaPrint { display: none; background: white; color: black; padding: 20mm; direction: rtl; width: 210mm; min-height: 297mm; box-sizing: border-box; }
     </style>
 </head>
 <body>
@@ -283,14 +289,13 @@
         <div style="background: var(--accent-purple); width: 80px; height: 80px; border-radius: 26px; display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; box-shadow: 0 10px 30px var(--accent-purple-glow);">
             <i class="bi bi-bank2 text-white fs-1"></i>
         </div>
-        <h2 class="fw-bold mb-2">بنك سعد</h2>
-        <p class="text-dim mb-5">النظام المصرفي الذكي لإدارة الأقساط</p>
+        <h2 class="fw-bold mb-2">النظام المصرفي</h2>
+        <p class="text-dim mb-5">الدخول فقط للمصرح لهم</p>
         
         <button onclick="loginWithGoogle()" class="btn btn-google shadow-sm mb-3">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="24">
             تسجيل الدخول (Google)
         </button>
-        <small class="text-dim" style="font-size: 0.75rem;">الوصول مقيد للمسؤولين فقط (cssp2015@gmail.com)</small>
     </div>
 </div>
 
@@ -301,7 +306,7 @@
     <section id="homeSection" class="p-3 pb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h5 class="fw-bold mb-0">مرحباً، سعد 👋</h5>
+                <h5 class="fw-bold mb-0">مرحباً 👋</h5>
                 <small class="text-dim" id="currentDateDisplay">جاري التحميل...</small>
             </div>
             <div class="bg-dark rounded-circle p-2 border border-secondary" onclick="showSection('settings')">
@@ -514,7 +519,7 @@
     </section>
     
     <!-- منطقة الـ PDF المخفية -->
-    <div id="pdfAreaPrint" style="display:none; background: white; color: black; padding: 20mm; direction: rtl; width: 210mm; min-height: 297mm; box-sizing: border-box;">
+    <div id="pdfAreaPrint" style="display:none;">
         <div id="pdfContent"></div>
     </div>
 
@@ -583,10 +588,8 @@
                 document.getElementById('userDisplayEmail').innerText = user.email;
                 document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                 
-                // Load Initial Data
                 await loadData();
                 
-                // Setup Realtime Backup Listener
                 onSnapshot(collection(db, "backups"), (snap) => {
                     const backups = snap.docs.map(d => ({id: d.id, ...d.data()}));
                     renderBackupsList(backups);
@@ -668,12 +671,12 @@
         let totalInv = 0, collected = 0, realProfit = 0, remaining = 0, totalProfit = 0;
 
         activeClients.forEach(c => {
-            totalInv += (c.saleAmount || 0);
-            const paid = (c.payments || []).filter(p => p.paid).reduce((sum, p) => sum + p.amount, 0);
+            totalInv += (parseFloat(c.saleAmount) || 0);
+            const paid = (c.payments || []).filter(p => p.paid).reduce((sum, p) => sum + parseFloat(p.amount), 0);
             collected += paid;
-            remaining += (c.saleAmount - paid);
-            const cost = c.cost || 0;
-            const sale = c.saleAmount || 0;
+            remaining += (parseFloat(c.saleAmount) - paid);
+            const cost = parseFloat(c.cost) || 0;
+            const sale = parseFloat(c.saleAmount) || 0;
             const profitMargin = sale - cost;
             const progress = sale > 0 ? (paid / sale) : 0;
             totalProfit += profitMargin;
@@ -689,15 +692,15 @@
         const list = document.getElementById('clientsList');
         list.innerHTML = '';
         activeClients.forEach(c => {
-            const paid = (c.payments || []).filter(p => p.paid).reduce((sum, p) => sum + p.amount, 0);
-            const percent = Math.round((paid / c.saleAmount) * 100) || 0;
+            const paid = (c.payments || []).filter(p => p.paid).reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            const percent = Math.round((paid / parseFloat(c.saleAmount)) * 100) || 0;
             const div = document.createElement('div');
             div.className = 'client-row';
             div.onclick = () => showClientDetails(c);
             div.innerHTML = `
                 <div>
                     <div class="fw-bold text-white mb-1">${c.name}</div>
-                    <div class="text-dim small">باقي: <span class="text-danger">${formatMoney(c.saleAmount - paid)}</span></div>
+                    <div class="text-dim small">باقي: <span class="text-danger">${formatMoney(parseFloat(c.saleAmount) - paid)}</span></div>
                 </div>
                 <div class="text-end">
                     <div class="badge bg-dark border border-secondary text-dim mb-1">${percent}%</div>
@@ -741,7 +744,7 @@
             name: name,
             capital: initial || 0,
             balance: initial || 0,
-            history: []
+            history: [{ type: 'إيداع مبدئي', amount: initial || 0, date: new Date().toLocaleString('ar-SA') }]
         });
         markDirty();
         renderAll();
@@ -760,20 +763,21 @@
         let totalBank = 0;
 
         wallets.forEach((w, idx) => {
-            totalBank += (w.balance || 0);
+            totalBank += (parseFloat(w.balance) || 0);
             
-            // Calculate invested amount from active clients
             let invested = 0;
             clients.filter(c => !c.archived).forEach(c => {
                 const contrib = c.walletContributions.find(con => con.walletName === w.name);
                 if(contrib) {
-                    const paid = c.payments.filter(p=>p.paid).reduce((a,b)=>a+b.amount,0);
-                    const progress = paid / c.saleAmount;
-                    invested += (contrib.amount * (1 - progress));
+                    const paid = c.payments.filter(p=>p.paid).reduce((a,b)=>a+parseFloat(b.amount),0);
+                    const progress = paid / parseFloat(c.saleAmount);
+                    invested += (parseFloat(contrib.amount) * (1 - progress));
                 }
             });
 
-            const profit = (w.balance + invested) - w.capital;
+            const currentBalance = parseFloat(w.balance) || 0;
+            const capital = parseFloat(w.capital) || 0;
+            const profit = (currentBalance + invested) - capital;
 
             const div = document.createElement('div');
             div.className = 'vault-card';
@@ -783,10 +787,16 @@
                     <button onclick="deleteWallet(${idx})" class="btn btn-sm btn-link text-danger p-0"><i class="bi bi-trash3"></i></button>
                 </div>
                 <div class="vault-card-body">
-                    <div class="vault-stat"><span class="text-dim">إجمالي رأس المال</span><span class="text-white fw-bold">${formatMoney(w.capital)}</span></div>
-                    <div class="vault-stat"><span class="text-dim">المتاح للسحب (كاش)</span><span class="text-success fw-bold">${formatMoney(w.balance)}</span></div>
+                    <div class="vault-stat"><span class="text-dim">إجمالي رأس المال</span><span class="text-white fw-bold">${formatMoney(capital)}</span></div>
+                    <div class="vault-stat"><span class="text-dim">الرصيد المتاح</span><span class="text-success fw-bold">${formatMoney(currentBalance)}</span></div>
                     <div class="vault-stat"><span class="text-dim">الأموال المستثمرة</span><span class="text-warning fw-bold">${formatMoney(invested)}</span></div>
                     <div class="vault-stat pt-2 border-top border-secondary"><span class="text-dim">إجمالي الربح</span><span class="${profit >= 0 ? 'text-success' : 'text-danger'} fw-bold">${formatMoney(profit)}</span></div>
+                    
+                    <div class="mt-3 bg-dark p-2 rounded" style="max-height: 100px; overflow-y: auto;">
+                        <small class="text-dim d-block mb-1 border-bottom border-secondary pb-1">سجل العمليات:</small>
+                        ${(w.history || []).map(h => `<div class="log-item d-flex justify-content-between"><span>${h.type}</span><span>${formatMoney(h.amount)}</span></div>`).reverse().join('')}
+                    </div>
+
                     <div class="d-flex gap-2 mt-3">
                         <button onclick="walletAction(${idx}, 'deposit')" class="btn btn-sm btn-outline-success flex-fill">إيداع</button>
                         <button onclick="walletAction(${idx}, 'withdraw')" class="btn btn-sm btn-outline-danger flex-fill">سحب</button>
@@ -795,14 +805,19 @@
             list.appendChild(div);
         });
         document.getElementById('bankBalance').innerText = formatMoney(totalBank);
-        document.getElementById('partnersShare').innerHTML = wallets.map(w => `${w.name}: <span class="text-white">${formatMoney(w.balance)}</span>`).join(' | ');
+        document.getElementById('partnersShare').innerHTML = wallets.map(w => `${w.name}: <span class="text-white">${formatMoney(parseFloat(w.balance) || 0)}</span>`).join(' | ');
     }
 
     window.walletAction = (idx, type) => {
         const amount = parseFloat(prompt(type === 'deposit' ? "مبلغ الإيداع:" : "مبلغ السحب:"));
         if (!amount || amount <= 0) return;
-        if (type === 'withdraw' && wallets[idx].balance < amount) { alert("الرصيد غير كافٍ!"); return; }
-        wallets[idx].balance += (type === 'deposit' ? amount : -amount);
+        const currentBalance = parseFloat(wallets[idx].balance) || 0;
+        if (type === 'withdraw' && currentBalance < amount) { alert("الرصيد غير كافٍ!"); return; }
+        
+        wallets[idx].balance = (parseFloat(wallets[idx].balance) || 0) + (type === 'deposit' ? amount : -amount);
+        if (!wallets[idx].history) wallets[idx].history = [];
+        wallets[idx].history.push({ type: type === 'deposit' ? 'إيداع' : 'سحب', amount: amount, date: new Date().toLocaleString('ar-SA') });
+        
         markDirty();
         renderVault();
     };
@@ -814,7 +829,7 @@
         wallets.forEach((w, idx) => {
             const div = document.createElement('div');
             div.className = 'd-flex justify-content-between align-items-center bg-dark p-2 rounded border border-secondary';
-            div.innerHTML = `<div><div class="small text-white">${w.name}</div><div class="extra-small text-dim">متاح: ${formatMoney(w.balance)}</div></div>
+            div.innerHTML = `<div><div class="small text-white">${w.name}</div><div class="extra-small text-dim">متاح: ${formatMoney(parseFloat(w.balance) || 0)}</div></div>
                 <input type="number" class="form-control form-control-sm w-50 bg-black text-white border-secondary wallet-input" 
                     placeholder="0" data-idx="${idx}" data-name="${w.name}" oninput="calcTotalCost()">`;
             container.appendChild(div);
@@ -842,7 +857,8 @@
             const val = parseFloat(inp.value || 0);
             if (val > 0) {
                 const w = wallets[inp.dataset.idx];
-                if (val > w.balance) { alert(`خطأ: رصيد محفظة ${w.name} غير كافٍ!`); valid = false; }
+                const balance = parseFloat(w.balance) || 0;
+                if (val > balance) { alert(`خطأ: رصيد محفظة ${w.name} غير كافٍ!`); valid = false; }
                 costMap.push({ walletIdx: inp.dataset.idx, walletName: inp.dataset.name, amount: val });
                 totalCost += val;
             }
@@ -850,7 +866,13 @@
         if (!valid) return;
         if (totalCost <= 0) { alert("يجب تحديد مبلغ التمويل."); return; }
         const saleAmount = parseFloat(document.getElementById('amount').value);
-        costMap.forEach(item => wallets[item.walletIdx].balance -= item.amount);
+        
+        costMap.forEach(item => {
+            wallets[item.walletIdx].balance = (parseFloat(wallets[item.walletIdx].balance) || 0) - item.amount;
+            if (!wallets[item.walletIdx].history) wallets[item.walletIdx].history = [];
+            wallets[item.walletIdx].history.push({ type: 'تمويل عقد جديد', amount: item.amount, date: new Date().toLocaleString('ar-SA') });
+        });
+
         const startDate = new Date(document.getElementById('startDate').value);
         const months = parseInt(document.getElementById('instCount').value);
         const monthly = saleAmount / months;
@@ -879,18 +901,18 @@
     };
 
     // --- Client Details ---
-    function showClientDetails(c) {
+    window.showClientDetails = (c) => {
         currentViewingClient = c;
         const detailsDiv = document.getElementById('clientDetailsContent');
-        const paid = c.payments.filter(p=>p.paid).reduce((a,b)=>a+b.amount,0);
-        const remaining = c.saleAmount - paid;
+        const paid = (c.payments || []).filter(p=>p.paid).reduce((a,b)=>a+parseFloat(b.amount),0);
+        const remaining = parseFloat(c.saleAmount) - paid;
         
         detailsDiv.innerHTML = `
             <div class="stat-card">
                 <h4 class="fw-bold text-center text-white mb-1">${c.name}</h4>
                 <div class="text-center text-dim mb-4">${c.phone}</div>
                 <div class="row text-center mb-4">
-                    <div class="col-4 border-end border-secondary"><small class="text-dim">المبلغ</small><div class="fw-bold text-white">${formatMoney(c.saleAmount)}</div></div>
+                    <div class="col-4 border-end border-secondary"><small class="text-dim">المبلغ</small><div class="fw-bold text-white">${formatMoney(parseFloat(c.saleAmount))}</div></div>
                     <div class="col-4 border-end border-secondary"><small class="text-dim">المدفوع</small><div class="fw-bold text-success">${formatMoney(paid)}</div></div>
                     <div class="col-4"><small class="text-dim">المتبقي</small><div class="fw-bold text-danger">${formatMoney(remaining)}</div></div>
                 </div>
@@ -901,8 +923,9 @@
                 <div class="client-row ${p.paid ? 'border-success' : 'border-secondary'}" style="background: ${p.paid ? 'rgba(46, 204, 113, 0.05)' : 'rgba(255,255,255,0.02)'}">
                     <div><div class="fw-bold text-white">قسط #${p.id}</div><div class="text-dim small">${p.date}</div></div>
                     <div class="text-end">
-                        <div class="fw-bold text-white mb-1">${formatMoney(p.amount)}</div>
-                        ${p.paid ? `<span class="status-pill status-paid">مدفوع</span>` : `<button onclick="payInstallment('${c.idNum}', ${idx})" class="btn btn-sm btn-outline-warning">سداد</button>
+                        <div class="fw-bold text-white mb-1">${formatMoney(parseFloat(p.amount))}</div>
+                        ${p.paid ? `<span class="status-pill status-paid">تم السداد</span>` : `
+                        <button onclick="payInstallment('${c.idNum}', ${idx})" class="btn btn-sm btn-outline-warning">سداد</button>
                         <button onclick="sendWhatsApp('${c.phone}', '${c.name}', '${p.amount}', '${p.date}')" class="btn btn-sm btn-success ms-1"><i class="bi bi-whatsapp"></i></button>`}
                     </div>
                 </div>`).join('')}`;
@@ -915,33 +938,49 @@
         if (!client) return;
         const payment = client.payments[payIdx];
         payment.paid = true;
-        const ratio = payment.amount / client.saleAmount;
+        
+        const saleAmount = parseFloat(client.saleAmount);
+        const cost = parseFloat(client.cost);
+        const paymentAmount = parseFloat(payment.amount);
+
         client.walletContributions.forEach(contrib => {
-            const share = (client.cost * (contrib.amount / client.cost)) * (payment.amount / client.saleAmount);
-            const profitShare = (payment.amount - (client.cost * (payment.amount / client.saleAmount))) * (contrib.amount / client.cost);
             const wallet = wallets.find(w => w.name === contrib.walletName);
-            if(wallet) wallet.balance += (share + profitShare);
+            if(wallet) {
+                const ratio = parseFloat(contrib.amount) / cost;
+                const costShare = (cost * ratio) * (paymentAmount / saleAmount);
+                const profitShare = (paymentAmount - (cost * (paymentAmount / saleAmount))) * ratio;
+                
+                wallet.balance = (parseFloat(wallet.balance) || 0) + (costShare + profitShare);
+                if (!wallet.history) wallet.history = [];
+                wallet.history.push({ type: `قسط عميل: ${client.name}`, amount: (costShare + profitShare), date: new Date().toLocaleString('ar-SA') });
+            }
         });
         markDirty();
         showClientDetails(client);
     };
 
     window.sendWhatsApp = (phone, name, amount, date) => {
-        const msg = `مرحباً ${name}،%0aنود تذكيركم بقسط مستحق بقيمة ${amount} ريال بتاريخ ${date}.%0aبنك سعد`;
+        const msg = `مرحباً ${name}،%0aنود تذكيركم بقسط مستحق بقيمة ${amount} ريال بتاريخ ${date}.`;
         window.open(`https://wa.me/966${phone.substring(1)}?text=${msg}`, '_blank');
     };
 
     window.settleContract = () => {
         if(!currentViewingClient) return;
-        const paid = currentViewingClient.payments.filter(p=>p.paid).reduce((a,b)=>a+b.amount,0);
-        const remaining = currentViewingClient.saleAmount - paid;
+        const paid = currentViewingClient.payments.filter(p=>p.paid).reduce((a,b)=>a+parseFloat(b.amount),0);
+        const remaining = parseFloat(currentViewingClient.saleAmount) - paid;
         if (remaining <= 0) { alert("العقد مكتمل!"); moveToArchive(currentViewingClient); return; }
         const discount = parseFloat(prompt(`المتبقي ${remaining}. أدخل الخصم:`, "0") || 0);
         const finalPay = remaining - discount;
         if(!confirm(`سداد ${finalPay} وإغلاق العقد؟`)) return;
+        
         currentViewingClient.walletContributions.forEach(contrib => {
             const wallet = wallets.find(w => w.name === contrib.walletName);
-            if(wallet) wallet.balance += (finalPay * (contrib.amount / currentViewingClient.cost));
+            if(wallet) {
+                const share = finalPay * (parseFloat(contrib.amount) / parseFloat(currentViewingClient.cost));
+                wallet.balance = (parseFloat(wallet.balance) || 0) + share;
+                if (!wallet.history) wallet.history = [];
+                wallet.history.push({ type: `تسوية عقد: ${currentViewingClient.name}`, amount: share, date: new Date().toLocaleString('ar-SA') });
+            }
         });
         currentViewingClient.payments.forEach(p => p.paid = true);
         moveToArchive(currentViewingClient);
@@ -951,73 +990,57 @@
 
     function moveToArchive(client) { client.archived = true; renderAll(); }
 
-    // --- PDF FIX ---
     window.downloadPDF = () => {
         if(!currentViewingClient) return;
         const c = currentViewingClient;
-        const paid = c.payments.filter(p=>p.paid).reduce((a,b)=>a+b.amount,0);
-        
-        // Generate a simple black on white HTML for PDF
+        const paid = c.payments.filter(p=>p.paid).reduce((a,b)=>a+parseFloat(b.amount),0);
+        const remaining = parseFloat(c.saleAmount) - paid;
+
         const content = `
-            <div style="font-family: Arial, sans-serif; direction: rtl; color: black; padding: 20px;">
-                <div style="text-align: center; border-bottom: 2px solid black; padding-bottom: 20px; margin-bottom: 30px;">
-                    <h1 style="margin: 0;">بنك سعد</h1>
-                    <h3 style="margin: 5px 0;">كشف حساب تمويل</h3>
-                    <p style="margin: 5px 0;">تاريخ الكشف: ${new Date().toLocaleDateString('ar-SA')}</p>
-                </div>
-                
-                <div style="margin-bottom: 30px; line-height: 1.6;">
+            <div style="font-family: Arial, sans-serif; direction: rtl; color: black; padding: 10px; border: 1px solid black;">
+                <h2 style="text-align: center; margin-bottom: 20px;">كشف حساب عميل</h2>
+                <div style="margin-bottom: 20px;">
                     <p><strong>اسم العميل:</strong> ${c.name}</p>
-                    <p><strong>رقم الهوية:</strong> ${c.idNum}</p>
-                    <p><strong>جوال العميل:</strong> ${c.phone}</p>
-                    <hr>
-                    <p><strong>إجمالي مبلغ العقد:</strong> ${formatMoney(c.saleAmount)} ر.س</p>
-                    <p><strong>المبلغ المسدد:</strong> ${formatMoney(paid)} ر.س</p>
-                    <p><strong>المبلغ المتبقي:</strong> <span style="color: red;">${formatMoney(c.saleAmount - paid)}</span> ر.س</p>
+                    <p><strong>إجمالي مبلغ التمويل:</strong> ${formatMoney(parseFloat(c.saleAmount))} ر.س</p>
+                    <p><strong>المبلغ المتبقي:</strong> <span style="color: red;">${formatMoney(remaining)}</span> ر.س</p>
                 </div>
 
-                <table style="width: 100%; border-collapse: collapse; margin-top: 20px;" border="1">
+                <table style="width: 100%; border-collapse: collapse;" border="1">
                     <thead>
-                        <tr style="background-color: #f2f2f2;">
-                            <th style="padding: 10px;">#</th>
-                            <th style="padding: 10px;">تاريخ الاستحقاق</th>
-                            <th style="padding: 10px;">قيمة القسط</th>
-                            <th style="padding: 10px;">الحالة</th>
+                        <tr style="background-color: #eee;">
+                            <th style="padding: 5px;">#</th>
+                            <th style="padding: 5px;">التاريخ</th>
+                            <th style="padding: 5px;">المبلغ</th>
+                            <th style="padding: 5px;">الحالة</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${c.payments.map(p => `
                             <tr>
-                                <td style="padding: 10px; text-align: center;">${p.id}</td>
-                                <td style="padding: 10px; text-align: center;">${p.date}</td>
-                                <td style="padding: 10px; text-align: center;">${formatMoney(p.amount)}</td>
-                                <td style="padding: 10px; text-align: center;">${p.paid ? 'تم السداد' : 'قيد الانتظار'}</td>
+                                <td style="padding: 5px; text-align: center;">${p.id}</td>
+                                <td style="padding: 5px; text-align: center;">${p.date}</td>
+                                <td style="padding: 5px; text-align: center;">${formatMoney(parseFloat(p.amount))}</td>
+                                <td style="padding: 5px; text-align: center;">${p.paid ? 'مدفوع' : 'غير مدفوع'}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                 </table>
-                <div style="margin-top: 50px; text-align: center; font-size: 0.8em; color: gray;">
-                    هذا الكشف مستخرج آلياً ولا يحتاج إلى توقيع.
-                </div>
             </div>`;
         
-        const element = document.getElementById('pdfContent');
+        const element = document.getElementById('pdfAreaPrint');
+        element.style.display = 'block';
         element.innerHTML = content;
         
         const opt = {
-            margin: 0,
-            filename: `كشف_حساب_${c.name}.pdf`,
+            margin: 10,
+            filename: `كشف_${c.name}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            html2canvas: { scale: 2 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         
-        // Show the hidden area temporarily for the capture
-        const printArea = document.getElementById('pdfAreaPrint');
-        printArea.style.display = 'block';
-        
-        html2pdf().set(opt).from(printArea).save().then(() => {
-            printArea.style.display = 'none';
+        html2pdf().set(opt).from(element).save().then(() => {
+            element.style.display = 'none';
         });
     };
 
@@ -1080,9 +1103,13 @@
         ['home', 'addClient', 'vault', 'archive', 'settings', 'details'].forEach(s => {
             const el = document.getElementById(s + 'Section'); if (el) el.style.display = 'none';
         });
-        document.getElementById(id + 'Section').style.display = 'block';
+        const target = document.getElementById(id + 'Section');
+        if (target) target.style.display = 'block';
+        
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         const navEl = document.getElementById('nav-' + id); if (navEl) navEl.classList.add('active');
+        
+        if (id === 'home' || id === 'vault') renderAll();
     };
 
     window.filterClients = (query) => {
