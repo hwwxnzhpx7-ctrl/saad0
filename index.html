@@ -15,12 +15,12 @@
     
     <style>
         :root {
-            /* Quiet Purple Theme */
-            --bg-dark: #0f0c13; 
-            --card-bg: #181420; 
-            --accent-purple: #9b59b6; 
-            --accent-purple-dim: rgba(155, 89, 182, 0.1);
-            --accent-purple-glow: rgba(155, 89, 182, 0.3);
+            /* Quiet Purple Theme - Adjusted */
+            --bg-dark: #000000; 
+            --card-bg: #121212; 
+            --accent-purple: #d02a85; 
+            --accent-purple-dim: rgba(208, 42, 133, 0.1);
+            --accent-purple-glow: rgba(208, 42, 133, 0.3);
             
             --text-main: #ffffff; 
             --text-dim: #b0a8b9; 
@@ -29,7 +29,7 @@
             --error-red: #c0392b;
             --warning-gold: #f39c12;
             
-            --nav-bg: rgba(24, 20, 32, 0.95);
+            --nav-bg: #000000;
         }
 
         body { 
@@ -1051,10 +1051,21 @@
             const div = document.createElement('div');
             div.className = 'client-row'; div.style.opacity = '0.7';
             div.innerHTML = `<div><i class="bi bi-check-circle-fill text-success me-2"></i>${c.name}</div>
-                <button class="btn btn-sm btn-outline-light" onclick="restoreClient('${c.idNum}')">استعادة</button>`;
+                <div>
+                    <button class="btn btn-sm btn-outline-light" onclick="restoreClient('${c.idNum}')">استعادة</button>
+                    <button class="btn btn-sm btn-outline-danger ms-2" onclick="deleteClient('${c.idNum}')">حذف</button>
+                </div>`;
             list.appendChild(div);
         });
     }
+
+    window.deleteClient = (idNum) => {
+        if(confirm("هل أنت متأكد من حذف هذا العميل نهائياً؟")) {
+            clients = clients.filter(c => c.idNum !== idNum);
+            markDirty();
+            renderAll();
+        }
+    };
 
     window.restoreClient = (idNum) => {
         const c = clients.find(c => c.idNum === idNum);
