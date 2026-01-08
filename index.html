@@ -274,7 +274,36 @@
             font-weight: bold; 
         }
 
-        /* PDF Style - Simplified for print */
+        /* Undo Button */
+    .undo-btn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 10000;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--text-main);
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    }
+    .undo-btn:active {
+        transform: scale(0.9);
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .undo-btn i {
+        font-size: 1.2rem;
+    }
+
+    /* PDF Style - Simplified for print */
         #pdfAreaPrint { display: none; background: white; color: black; padding: 20mm; direction: rtl; width: 210mm; min-height: 297mm; box-sizing: border-box; }
     </style>
 </head>
@@ -282,6 +311,11 @@
 
 <!-- تنبيه الحفظ -->
 <div id="draftAlert">⚠️ تنبيه: لديك تعديلات غير محفوظة في السحابة</div>
+
+<!-- زر التراجع -->
+<div class="undo-btn" onclick="undoLastAction()" title="تراجع عن آخر خطوة">
+    <i class="bi bi-arrow-counterclockwise"></i>
+</div>
 
 <!-- صفحة تسجيل الدخول -->
 <div id="loginPage" class="container p-4 mt-5">
@@ -574,6 +608,36 @@
     let wallets = [];
     let currentViewingClient = null;
     let isDirty = false;
+    let stateHistory = []; // Stack to store previous states
+
+    // Save current state before any modification
+    function saveState() {
+        if (stateHistory.length >= 20) stateHistory.shift(); // Keep max 20 steps
+        stateHistory.push(JSON.stringify({ clients, wallets }));
+    }
+
+    // Undo last action
+    window.undoLastAction = () => {
+        if (stateHistory.length === 0) {
+            alert("لا توجد خطوات سابقة للتراجع عنها!");
+            return;
+        }
+        const lastState = JSON.parse(stateHistory.pop());
+        clients = lastState.clients;
+        wallets = lastState.wallets;
+        markDirty();
+        renderAll();
+        // Refresh detail view if open
+        if (currentViewingClient) {
+            const restoredClient = clients.find(c => c.idNum === currentViewingClient.idNum);
+            if (restoredClient) {
+                showClientDetails(restoredClient);
+            } else {
+                showSection('home');
+            }
+        }
+        alert("تم التراجع بنجاح ↩️");
+    };
 
     // --- Auth ---
     window.loginWithGoogle = () => {
@@ -737,6 +801,7 @@
 
     // --- Vault Logic ---
     window.addNewWallet = () => {
+        saveState();
         const name = prompt("اسم المحفظة الجديدة:");
         if (!name) return;
         const initial = parseFloat(prompt("رأس المال المبدئي (ر.س):", "0"));
@@ -752,6 +817,7 @@
 
     window.deleteWallet = (idx) => {
         if(!confirm(`هل أنت متأكد من حذف محفظة ${wallets[idx].name}؟ سيتم فقدان بياناتها!`)) return;
+        saveState();
         wallets.splice(idx, 1);
         markDirty();
         renderAll();
@@ -814,6 +880,7 @@
         const currentBalance = parseFloat(wallets[idx].balance) || 0;
         if (type === 'withdraw' && currentBalance < amount) { alert("الرصيد غير كافٍ!"); return; }
         
+        saveState();
         wallets[idx].balance = (parseFloat(wallets[idx].balance) || 0) + (type === 'deposit' ? amount : -amount);
         if (!wallets[idx].history) wallets[idx].history = [];
         wallets[idx].history.push({ type: type === 'deposit' ? 'إيداع' : 'سحب', amount: amount, date: new Date().toLocaleString('ar-SA') });
@@ -865,6 +932,8 @@
         });
         if (!valid) return;
         if (totalCost <= 0) { alert("يجب تحديد مبلغ التمويل."); return; }
+        
+        saveState();
         const saleAmount = parseFloat(document.getElementById('amount').value);
         
         costMap.forEach(item => {
@@ -936,6 +1005,8 @@
         if (!confirm("تأكيد سداد القسط؟")) return;
         const client = clients.find(c => c.idNum === clientIdNum);
         if (!client) return;
+        
+        saveState();
         const payment = client.payments[payIdx];
         payment.paid = true;
         
@@ -960,7 +1031,7 @@
     };
 
     window.sendWhatsApp = (phone, name, amount, date) => {
-        const msg = `مرحباً ${name}،%0aنود تذكيركم بقسط مستحق بقيمة ${amount} ريال بتاريخ ${date}.`;
+        const msg = `السلام عليكم ورحمة الله وبركاته %0a%0a  نود تذكيرك بالقسط الشهري %0a وجزاك الله خير`;
         window.open(`https://wa.me/966${phone.substring(1)}?text=${msg}`, '_blank');
     };
 
@@ -972,6 +1043,8 @@
         const discount = parseFloat(prompt(`المتبقي ${remaining}. أدخل الخصم:`, "0") || 0);
         const finalPay = remaining - discount;
         if(!confirm(`سداد ${finalPay} وإغلاق العقد؟`)) return;
+        
+        saveState();
         
         currentViewingClient.walletContributions.forEach(contrib => {
             const wallet = wallets.find(w => w.name === contrib.walletName);
@@ -1061,6 +1134,7 @@
 
     window.deleteClient = (idNum) => {
         if(confirm("هل أنت متأكد من حذف هذا العميل نهائياً؟")) {
+            saveState();
             clients = clients.filter(c => c.idNum !== idNum);
             markDirty();
             renderAll();
@@ -1069,7 +1143,10 @@
 
     window.restoreClient = (idNum) => {
         const c = clients.find(c => c.idNum === idNum);
-        if(c) { c.archived = false; markDirty(); renderAll(); alert("تمت استعادة العميل"); }
+        if(c) { 
+            saveState();
+            c.archived = false; markDirty(); renderAll(); alert("تمت استعادة العميل"); 
+        }
     };
 
     function renderBackupsList(backups) {
@@ -1101,6 +1178,7 @@
     window.restoreBackup = async (b) => {
         if (!confirm("سيتم استبدال البيانات الحالية. متأكد؟")) return;
         try {
+            saveState();
             const data = JSON.parse(b.data);
             wallets = data.wallets || [];
             clients = data.clients || [];
