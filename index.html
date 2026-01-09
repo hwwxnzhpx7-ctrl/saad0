@@ -274,33 +274,46 @@
             font-weight: bold; 
         }
 
-        /* Undo Button */
+        /* Undo Button - Improved */
     .undo-btn {
         position: fixed;
-        top: 20px;
+        bottom: 110px;
         left: 20px;
-        z-index: 10000;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: var(--text-main);
-        width: 45px;
-        height: 45px;
+        z-index: 9999;
+        
+        background: linear-gradient(135deg, var(--accent-purple), #9b59b6);
+        color: white;
+        
+        width: 55px;
+        height: 55px;
         border-radius: 50%;
+        
         display: flex;
         align-items: center;
         justify-content: center;
+        
+        border: none;
+        box-shadow: 0 4px 15px rgba(208, 42, 133, 0.5);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        
         cursor: pointer;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
+
+    .undo-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(208, 42, 133, 0.7);
+    }
+
     .undo-btn:active {
-        transform: scale(0.9);
-        background: rgba(255, 255, 255, 0.2);
+        transform: scale(0.95);
+        box-shadow: 0 2px 10px rgba(208, 42, 133, 0.5);
     }
+
     .undo-btn i {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
     }
 
     /* PDF Style - Simplified for print */
