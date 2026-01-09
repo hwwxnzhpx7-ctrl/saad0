@@ -280,6 +280,11 @@
 </head>
 <body>
 
+<!-- زر التراجع -->
+<button onclick="undoLastAction()" style="position: fixed; bottom: 100px; left: 20px; z-index: 9999; background: #f1c40f; color: #000; border: none; border-radius: 50%; width: 45px; height: 45px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+    <i class="bi bi-arrow-counterclockwise"></i>
+</button>
+
 <!-- تنبيه الحفظ -->
 <div id="draftAlert">⚠️ تنبيه: لديك تعديلات غير محفوظة في السحابة</div>
 
@@ -574,6 +579,22 @@
     let wallets = [];
     let currentViewingClient = null;
     let isDirty = false;
+    let undoStack = []; 
+
+    window.pushUndoState = () => {
+         if (undoStack.length > 20) undoStack.shift();
+         undoStack.push(JSON.stringify({clients, wallets}));
+    };
+
+    window.undoLastAction = () => {
+        if (undoStack.length === 0) { alert("لا توجد خطوات للتراجع عنها ⚠️"); return; }
+        const lastState = JSON.parse(undoStack.pop());
+        clients = lastState.clients;
+        wallets = lastState.wallets;
+        markDirty();
+        renderAll();
+        alert("تم التراجع عن آخر خطوة بنجاح ↩️");
+    };
 
     // --- Auth ---
     window.loginWithGoogle = () => {
@@ -737,6 +758,7 @@
 
     // --- Vault Logic ---
     window.addNewWallet = () => {
+        pushUndoState();
         const name = prompt("اسم المحفظة الجديدة:");
         if (!name) return;
         const initial = parseFloat(prompt("رأس المال المبدئي (ر.س):", "0"));
@@ -751,6 +773,7 @@
     };
 
     window.deleteWallet = (idx) => {
+        pushUndoState();
         if(!confirm(`هل أنت متأكد من حذف محفظة ${wallets[idx].name}؟ سيتم فقدان بياناتها!`)) return;
         wallets.splice(idx, 1);
         markDirty();
@@ -851,6 +874,7 @@
     window.toggleGuarantor = (checked) => document.getElementById('guarantorData').style.display = checked ? 'block' : 'none';
 
     window.addClient = () => {
+        pushUndoState();
         const inputs = document.querySelectorAll('.wallet-input');
         let costMap = [], totalCost = 0, valid = true;
         inputs.forEach(inp => {
@@ -933,6 +957,7 @@
     }
 
     window.payInstallment = (clientIdNum, payIdx) => {
+        pushUndoState();
         if (!confirm("تأكيد سداد القسط؟")) return;
         const client = clients.find(c => c.idNum === clientIdNum);
         if (!client) return;
@@ -960,11 +985,12 @@
     };
 
     window.sendWhatsApp = (phone, name, amount, date) => {
-        const msg = `مرحباً ${name}،%0aنود تذكيركم بقسط مستحق بقيمة ${amount} ريال بتاريخ ${date}.`;
+        const msg = `السلام عليكم ورحمة الله وبركاته%0aنذكرك باستحقاق قسط لهذا الشهر%0aوجزاك الله خير`;
         window.open(`https://wa.me/966${phone.substring(1)}?text=${msg}`, '_blank');
     };
 
     window.settleContract = () => {
+        pushUndoState();
         if(!currentViewingClient) return;
         const paid = currentViewingClient.payments.filter(p=>p.paid).reduce((a,b)=>a+parseFloat(b.amount),0);
         const remaining = parseFloat(currentViewingClient.saleAmount) - paid;
@@ -1060,6 +1086,7 @@
     }
 
     window.deleteClient = (idNum) => {
+        pushUndoState();
         if(confirm("هل أنت متأكد من حذف هذا العميل نهائياً؟")) {
             clients = clients.filter(c => c.idNum !== idNum);
             markDirty();
@@ -1068,6 +1095,7 @@
     };
 
     window.restoreClient = (idNum) => {
+        pushUndoState();
         const c = clients.find(c => c.idNum === idNum);
         if(c) { c.archived = false; markDirty(); renderAll(); alert("تمت استعادة العميل"); }
     };
