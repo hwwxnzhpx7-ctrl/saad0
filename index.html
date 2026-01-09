@@ -1016,29 +1016,36 @@
 
     window.payInstallment = (clientIdNum, payIdx) => {
         if (!confirm("تأكيد سداد القسط؟")) return;
-        const client = clients.find(c => c.idNum === clientIdNum);
+        const client = clients.find(c => String(c.idNum) === String(clientIdNum));
         if (!client) return;
         
         saveState();
         const payment = client.payments[payIdx];
+        if (!payment) return;
         payment.paid = true;
         
         const saleAmount = parseFloat(client.saleAmount);
         const cost = parseFloat(client.cost);
         const paymentAmount = parseFloat(payment.amount);
 
-        client.walletContributions.forEach(contrib => {
-            const wallet = wallets.find(w => w.name === contrib.walletName);
-            if(wallet) {
-                const ratio = parseFloat(contrib.amount) / cost;
-                const costShare = (cost * ratio) * (paymentAmount / saleAmount);
-                const profitShare = (paymentAmount - (cost * (paymentAmount / saleAmount))) * ratio;
-                
-                wallet.balance = (parseFloat(wallet.balance) || 0) + (costShare + profitShare);
-                if (!wallet.history) wallet.history = [];
-                wallet.history.push({ type: `قسط عميل: ${client.name}`, amount: (costShare + profitShare), date: new Date().toLocaleString('ar-SA') });
-            }
-        });
+        if (client.walletContributions && Array.isArray(client.walletContributions)) {
+            client.walletContributions.forEach(contrib => {
+                const wallet = wallets.find(w => w.name === contrib.walletName);
+                if(wallet) {
+                    const ratio = parseFloat(contrib.amount) / cost;
+                    const costShare = (cost * ratio) * (paymentAmount / saleAmount);
+                    const profitShare = (paymentAmount - (cost * (paymentAmount / saleAmount))) * ratio;
+                    
+                    wallet.balance = (parseFloat(wallet.balance) || 0) + (costShare + profitShare);
+                    if (!wallet.history) wallet.history = [];
+                    wallet.history.push({ 
+                        type: `قسط عميل: ${client.name}`, 
+                        amount: (costShare + profitShare), 
+                        date: new Date().toLocaleString('ar-SA') 
+                    });
+                }
+            });
+        }
         markDirty();
         showClientDetails(client);
     };
